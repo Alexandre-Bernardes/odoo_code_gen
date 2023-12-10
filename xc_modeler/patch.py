@@ -90,6 +90,10 @@ if os.path.exists(vender_file):
     os.remove(vender_file)
 os.rename(obfuscator_file, vender_file)
 
+# remove write_file
+if os.path.exists(write_file):
+    os.remove(write_file)
+
 product_html_path = current_path + '/static/product.html'
 product_html_path = product_html_path.replace('\\', '/')
 # check if the file exists

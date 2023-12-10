@@ -2,17 +2,6 @@
 <odoo>
     <data>
         
-        <record model="ir.ui.view" id="xc_modeler.sync_table_wizard_list">
-            <field name="name">xc_modeler.sync_table_wizard list </field>
-            <field name="model">xc_modeler.sync_table_wizard</field>
-            <field name="arch" type="xml">
-                <tree>
-                    <field name="sync_manifest" string="sync_manifest"/>
-                    <field name="arrange_files" string="arrange_files"/>
-                </tree>
-            </field>
-        </record>
-        
         <record model="ir.ui.view" id="xc_modeler.sync_table_wizard_form">
             <field name="name">xc_modeler.sync_table_wizard form </field>
             <field name="model">xc_modeler.sync_table_wizard</field>
@@ -39,10 +28,10 @@
                         <!-- root_menus -->
                         <field name="root_menus" string="root_menus" invisible="1"/>
 
-                        <div class="form-group row" attrs="{'invisible': [('create_menu', '!=', True)], 'required': [('create_menu', '=', True)]}">
+                        <div class="form-group row" invisible="create_menu != True">
                             <label for="root_menu" class="col-sm-2 col-form-label">root_menu</label>
                             <div class="col-sm-10">
-                                <field name="root_menu" string="root_menu"/>
+                                <field name="root_menu" string="root_menu" require="create_menu = True"/>
                             </div>
                         </div>
 
@@ -89,11 +78,6 @@
                             </div>
                         </div>
 
-                        <footer>
-                            <button class="btn btn-primary" special="save_and_return" string="save" />
-                            <button class="btn" special="cancel" string="cancel" />
-                        </footer>
-
                     </sheet>
                 </form>
             </field>
@@ -104,5 +88,6 @@
             <field name="res_model">xc_modeler.sync_table_wizard</field>
             <field name="view_mode">tree,form</field>
         </record>
+
     </data>
 </odoo>

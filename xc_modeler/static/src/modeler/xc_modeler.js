@@ -94,7 +94,7 @@ export class XcModeler extends Component {
 
         let project_info = await this.orm.call(
             "xc_modeler.project", "get_project_info", [this.project_id]);
-        let result = this.python.call('collect_project_info', [project_info]);
+        let result = await this.python.call('collect_project_info_api', [project_info]);
         let status = result.status;
         if (status) {
             let errors = result.errors || [];
@@ -104,6 +104,7 @@ export class XcModeler extends Component {
             } else {
                 await this.orm.call(
                     "xc_modeler.project", "update_project_info", [this.project_id, result.project_info]);
+                this.reload_iframe();
             }
         }
         else {
@@ -111,11 +112,10 @@ export class XcModeler extends Component {
             let error_msg = errors.join("\n");
             self.do_notify(error_msg, "warning");
         }
-        this.reload_iframe();
     }
 
     reload_iframe() {
-        this.iframe.contentWindow.location.reload(true);
+        this.iFrame.contentWindow.location.reload(true);
     }
 
     onMessage(ev) {
@@ -185,8 +185,6 @@ export class XcModeler extends Component {
                 break;
 
             case 'xc_modeler:modeler_clicked':
-                // this.dropdown_togglers.dropdown('hide')
-                // click the fakeRef el
                 this.fakeRef.el.click();
                 break;
 
@@ -254,17 +252,31 @@ export class XcModeler extends Component {
      * save as svg 
      * @param {*} svg 
      */
-    save_as_svg(svg) {
-        let filename = "xc_modeler_" + this.project_id + ".svg";
-        let blob = new Blob([svg], { type: "image/svg+xml" });
-        let url = URL.createObjectURL(blob);
-        let a = document.createElement("a");
-        a.download = filename;
-        a.href = url;
-        a.click();
-        setTimeout(function () {
-            URL.revokeObjectURL(url);
-        }, 100);
+    async save_as_svg(svg) {
+        if (!this.is_in_shell) {
+            let filename = "xc_modeler_" + this.project_id + ".svg";
+            let blob = new Blob([svg], { type: "image/svg+xml" });
+            let url = URL.createObjectURL(blob);
+            let a = document.createElement("a");
+            a.download = filename;
+            a.href = url;
+            a.click();
+            setTimeout(function () {
+                URL.revokeObjectURL(url);
+            }, 100);
+        } else {
+            // choose a dir
+            let directory = await this.choose_directory();
+            let file_path = directory + "/" + "xc_modeler_" + this.project_id + ".svg";
+            this.python.call('save_as_svg', [file_path, svg]).then((result) => {
+                if (!result.status) {
+                    this.do_notify(result.message, "warning");
+                } else {
+                    // open the folder
+                    this.python.call('open_folder', [directory, "xc_modeler_" + this.project_id + ".svg"]);
+                }
+            });
+        }
     }
 
     /**
@@ -675,16 +687,16 @@ export class XcModeler extends Component {
         // download the zip file
         zip.generateAsync({ type: "base64" }).then(async (base64) => {
             // check in shell
-            if (self.is_in_shell) {
+            if (this.is_in_shell) {
                 // choose a dir
-                let dir = self.choose_directory()
+                let dir = await this.choose_directory()
                 if (dir) {
                     var file_path = dir + "/" + project_name + ".zip";
                     await this.python.call('save_base64_file', [file_path, base64]);
                     await this.python.call('open_folder', [dir, project_name + ".zip"]);
                 } else {
                     // notify user canceled
-                    self.do_notify("You canceled the operation.", "warning");
+                    this.do_notify("You canceled the operation.", "warning");
                 }
             } else {
                 // download the zip file
@@ -694,7 +706,7 @@ export class XcModeler extends Component {
                 a.click();
             }
         }, function (err) {
-            console.log('some thing is error while gen zip file');
+            this.do_notify('some thing is error while gen zip file', 'warning')
         });
     }
 
